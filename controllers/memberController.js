@@ -1,33 +1,77 @@
 const Member = require("../models/Member");
 
-// CREATE MEMBER
+/* =========================
+   CREATE MEMBER
+========================= */
 exports.createMember = async (req, res) => {
   try {
     const member = await Member.create(req.body);
-    res.status(201).json(member);
+    return res.status(201).json(member);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    return res.status(400).json({
+      error: err.message,
+    });
   }
 };
 
-// GET ALL MEMBERS
+/* =========================
+   GET ALL MEMBERS
+========================= */
 exports.getMembers = async (req, res) => {
-  const members = await Member.find().sort({ createdAt: -1 });
-  res.json(members);
+  try {
+    const members = await Member.find().sort({ createdAt: -1 });
+    return res.status(200).json(members);
+  } catch (err) {
+    return res.status(500).json({
+      error: "Failed to fetch members",
+    });
+  }
 };
 
-// UPDATE MEMBER
+/* =========================
+   UPDATE MEMBER
+========================= */
 exports.updateMember = async (req, res) => {
-  const member = await Member.findByIdAndUpdate(
-    req.params.id,
-    req.body,
-    { new: true }
-  );
-  res.json(member);
+  try {
+    const member = await Member.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+
+    if (!member) {
+      return res.status(404).json({
+        error: "Member not found",
+      });
+    }
+
+    return res.status(200).json(member);
+  } catch (err) {
+    return res.status(400).json({
+      error: err.message,
+    });
+  }
 };
 
-// DELETE MEMBER
+/* =========================
+   DELETE MEMBER
+========================= */
 exports.deleteMember = async (req, res) => {
-  await Member.findByIdAndDelete(req.params.id);
-  res.json({ message: "Member deleted" });
+  try {
+    const member = await Member.findByIdAndDelete(req.params.id);
+
+    if (!member) {
+      return res.status(404).json({
+        error: "Member not found",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Member deleted successfully",
+    });
+  } catch (err) {
+    return res.status(500).json({
+      error: "Failed to delete member",
+    });
+  }
 };
