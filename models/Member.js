@@ -1,29 +1,85 @@
 const mongoose = require("mongoose");
 
+const remarkSchema = new mongoose.Schema(
+  {
+    text: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  { _id: false } // no separate _id for each remark
+);
+
 const memberSchema = new mongoose.Schema(
   {
     labelCode: {
       type: String,
+      required: true,
+      trim: true,
       unique: true,
-      required: true // LM-24
+      index: true,
     },
 
-    name: { type: String, required: true },
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-    addressLine1: String,
-    addressLine2: String,
+    phone: {
+      type: String,
+      default: null,
+    },
 
-    area: String,
-    city: String,
-    state: String,
-    pincode: String,
+    email: {
+      type: String,
+      default: null,
+      lowercase: true,
+      trim: true,
+    },
 
-    phone: String,
+    addressLine1: {
+      type: String,
+      trim: true,
+    },
 
-    leaseStart: Date,
-    leaseEnd: Date
+    addressLine2: {
+      type: String,
+      trim: true,
+    },
+
+    city: {
+      type: String,
+      trim: true,
+    },
+
+    state: {
+      type: String,
+      trim: true,
+    },
+
+    pincode: {
+      type: String,
+      default: null,
+    },
+
+    /* ✅ NEW REMARKS STRUCTURE */
+    remarks: {
+      type: [remarkSchema],
+      default: [],
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    versionKey: false,
+  }
 );
+
+memberSchema.index({ labelCode: 1 }, { unique: true });
 
 module.exports = mongoose.model("Member", memberSchema);

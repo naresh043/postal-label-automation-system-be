@@ -16,6 +16,7 @@ app.use(express.json());
 // Routes
 app.use("/api/members", memberRoutes);
 app.use("/api/labels", labelRoutes);
+app.use("/api", require("./routes/dashboardRoutes"));
 
 // DB
 connectDB();
