@@ -1,5 +1,8 @@
 const mongoose = require("mongoose");
 
+/* =========================
+   REMARK SUB-SCHEMA
+========================= */
 const remarkSchema = new mongoose.Schema(
   {
     text: {
@@ -12,16 +15,19 @@ const remarkSchema = new mongoose.Schema(
       default: Date.now,
     },
   },
-  { _id: false } // no separate _id for each remark
+  { _id: false }
 );
 
+/* =========================
+   MEMBER SCHEMA
+========================= */
 const memberSchema = new mongoose.Schema(
   {
     labelCode: {
       type: String,
       required: true,
-      trim: true,
       unique: true,
+      trim: true,
       index: true,
     },
 
@@ -34,6 +40,7 @@ const memberSchema = new mongoose.Schema(
     phone: {
       type: String,
       default: null,
+      trim: true,
     },
 
     email: {
@@ -66,9 +73,10 @@ const memberSchema = new mongoose.Schema(
     pincode: {
       type: String,
       default: null,
+      trim: true,
     },
 
-    /* ✅ NEW REMARKS STRUCTURE */
+    /* ✅ Append-only remarks */
     remarks: {
       type: [remarkSchema],
       default: [],
@@ -80,6 +88,9 @@ const memberSchema = new mongoose.Schema(
   }
 );
 
+/* =========================
+   INDEXES
+========================= */
 memberSchema.index({ labelCode: 1 }, { unique: true });
 
 module.exports = mongoose.model("Member", memberSchema);

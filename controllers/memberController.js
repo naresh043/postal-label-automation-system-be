@@ -1,6 +1,9 @@
 const Member = require("../models/Member");
 const CounterModel = require("../models/CounterModel");
-// CREATE MEMBER
+
+/* =========================
+   CREATE MEMBER (LM / NAD)
+========================= */
 exports.createMember = async (req, res) => {
   try {
     const { prefix, ...memberData } = req.body;
@@ -24,7 +27,7 @@ exports.createMember = async (req, res) => {
       labelCode,
     });
 
-    res.status(201).json(member);
+    return res.status(201).json(member);
   } catch (err) {
     if (err.code === 11000) {
       return res.status(409).json({
@@ -32,28 +35,39 @@ exports.createMember = async (req, res) => {
       });
     }
 
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({
+      error: err.message,
+    });
   }
 };
 
-// GET ALL MEMBERS
+/* =========================
+   GET ALL MEMBERS
+========================= */
 exports.getMembers = async (req, res) => {
-  const members = await Member.find().sort({ createdAt: -1 });
-  res.json(members);
+  try {
+    const members = await Member.find().sort({ createdAt: -1 });
+    return res.status(200).json(members);
+  } catch {
+    return res.status(500).json({
+      error: "Failed to fetch members",
+    });
+  }
 };
 
-// UPDATE MEMBER (safe + remark-aware)
-// UPDATE MEMBER (safe, no labelCode update)
+/* =========================
+   UPDATE MEMBER
+   - labelCode protected
+   - remarks append-only
+========================= */
 exports.updateMember = async (req, res) => {
   try {
-    const { remark, labelCode, ...updateFields } = req.body;
-    //        ❌ ignored explicitly
+    const { remark, labelCode, ...updateFields } = req.body; // ❌ labelCode ignored
 
     const updateQuery = {
       $set: updateFields,
     };
 
-    // ✅ Append remark (date handled here)
     if (remark && remark.trim()) {
       updateQuery.$push = {
         remarks: {
@@ -73,35 +87,59 @@ exports.updateMember = async (req, res) => {
       return res.status(404).json({ error: "Member not found" });
     }
 
-    res.json(member);
+    return res.json(member);
   } catch (err) {
     console.error("UPDATE MEMBER ERROR:", err);
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 };
 
-// DELETE MEMBER
+/* =========================
+   DELETE MEMBER
+========================= */
 exports.deleteMember = async (req, res) => {
-  await Member.findByIdAndDelete(req.params.id);
-  res.json({ message: "Member deleted" });
+  try {
+    const member = await Member.findByIdAndDelete(req.params.id);
+
+    if (!member) {
+      return res.status(404).json({
+        error: "Member not found",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Member deleted successfully",
+    });
+  } catch {
+    return res.status(500).json({
+      error: "Failed to delete member",
+    });
+  }
 };
 
-
-
-
+/* =========================
+   GET NEXT MEMBER CODE
+   (Preview only)
+========================= */
 exports.getNextMemberCode = async (req, res) => {
-  const { prefix } = req.query;
+  try {
+    const { prefix } = req.query;
 
-  if (!["LM", "NAD"].includes(prefix)) {
-    return res.status(400).json({ error: "Invalid prefix" });
+    if (!["LM", "NAD"].includes(prefix)) {
+      return res.status(400).json({ error: "Invalid prefix" });
+    }
+
+    const counter = await CounterModel.findOne({ prefix });
+    const nextSeq = counter ? counter.seq + 1 : 1;
+
+    const padded = String(nextSeq).padStart(2, "0");
+
+    return res.json({
+      labelCode: `${prefix}-${padded}`,
+    });
+  } catch {
+    return res.status(500).json({
+      error: "Failed to generate next member code",
+    });
   }
-
-  const counter = await CounterModel.findOne({ prefix });
-
-  const nextSeq = counter ? counter.seq + 1 : 1;
-  const padded = String(nextSeq).padStart(2, "0");
-
-  res.json({
-    labelCode: `${prefix}-${padded}`,
-  });
 };
