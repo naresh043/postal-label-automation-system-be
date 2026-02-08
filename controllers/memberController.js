@@ -48,7 +48,7 @@ exports.getMembers = async (req, res) => {
   try {
     const members = await Member.find().sort({ createdAt: -1 });
     return res.status(200).json(members);
-  } catch {
+  } catch (err) {
     return res.status(500).json({
       error: "Failed to fetch members",
     });
@@ -62,12 +62,14 @@ exports.getMembers = async (req, res) => {
 ========================= */
 exports.updateMember = async (req, res) => {
   try {
-    const { remark, labelCode, ...updateFields } = req.body; // ❌ labelCode ignored
+    const { remark, labelCode, ...updateFields } = req.body;
+    // ❌ labelCode intentionally ignored
 
     const updateQuery = {
       $set: updateFields,
     };
 
+    // ✅ Append-only remarks
     if (remark && remark.trim()) {
       updateQuery.$push = {
         remarks: {
@@ -80,14 +82,14 @@ exports.updateMember = async (req, res) => {
     const member = await Member.findByIdAndUpdate(
       req.params.id,
       updateQuery,
-      { new: true }
+      { new: true, runValidators: true }
     );
 
     if (!member) {
       return res.status(404).json({ error: "Member not found" });
     }
 
-    return res.json(member);
+    return res.status(200).json(member);
   } catch (err) {
     console.error("UPDATE MEMBER ERROR:", err);
     return res.status(500).json({ error: err.message });
@@ -110,7 +112,7 @@ exports.deleteMember = async (req, res) => {
     return res.status(200).json({
       message: "Member deleted successfully",
     });
-  } catch {
+  } catch (err) {
     return res.status(500).json({
       error: "Failed to delete member",
     });
@@ -134,10 +136,10 @@ exports.getNextMemberCode = async (req, res) => {
 
     const padded = String(nextSeq).padStart(2, "0");
 
-    return res.json({
+    return res.status(200).json({
       labelCode: `${prefix}-${padded}`,
     });
-  } catch {
+  } catch (err) {
     return res.status(500).json({
       error: "Failed to generate next member code",
     });
