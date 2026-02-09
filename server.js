@@ -6,6 +6,8 @@ const connectDB = require("./config/db");
 
 const memberRoutes = require("./routes/memberRoutes");
 const labelRoutes = require("./routes/labelRoutes");
+const dashboardRoutes=require("./routes/dashboardRoutes")
+const authRoutes=require("./routes/authRoutes")
 
 const app = express();
 
@@ -16,7 +18,8 @@ app.use(express.json());
 // Routes
 app.use("/api/members", memberRoutes);
 app.use("/api/labels", labelRoutes);
-app.use("/api", require("./routes/dashboardRoutes"));
+app.use("/api", dashboardRoutes);
+app.use("/api/auth", authRoutes)
 
 // DB
 connectDB();
