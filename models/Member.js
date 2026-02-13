@@ -3,20 +3,17 @@ const mongoose = require("mongoose");
 /* =========================
    REMARK SUB-SCHEMA
 ========================= */
-const remarkSchema = new mongoose.Schema(
-  {
+const remarkSchema = new mongoose.Schema({
+  remark: {
     text: {
       type: String,
-      required: true,
       trim: true,
     },
     createdAt: {
       type: Date,
-      default: Date.now,
     },
   },
-  { _id: false }
-);
+});
 
 /* =========================
    MEMBER SCHEMA
@@ -77,15 +74,20 @@ const memberSchema = new mongoose.Schema(
     },
 
     /* ✅ Append-only remarks */
-    remarks: {
-      type: [remarkSchema],
-      default: [],
+    remark: {
+      text: {
+        type: String,
+        trim: true,
+      },
+      createdAt: {
+        type: Date,
+      },
     },
   },
   {
     timestamps: true,
     versionKey: false,
-  }
+  },
 );
 
 /* =========================

@@ -16,7 +16,7 @@ exports.createMember = async (req, res) => {
     const counter = await CounterModel.findOneAndUpdate(
       { prefix },
       { $inc: { seq: 1 } },
-      { new: true, upsert: true }
+      { new: true, upsert: true },
     );
 
     const paddedSeq = String(counter.seq).padStart(2, "0");
@@ -63,27 +63,23 @@ exports.getMembers = async (req, res) => {
 exports.updateMember = async (req, res) => {
   try {
     const { remark, labelCode, ...updateFields } = req.body;
-    // ❌ labelCode intentionally ignored
 
     const updateQuery = {
       $set: updateFields,
     };
 
-    // ✅ Append-only remarks
+    // ✅ Only ONE remark (overwrite old one)
     if (remark && remark.trim()) {
-      updateQuery.$push = {
-        remarks: {
-          text: remark.trim(),
-          createdAt: new Date(),
-        },
+      updateQuery.$set.remark = {
+        text: remark.trim(),
+        createdAt: new Date(), // stores date + time
       };
     }
 
-    const member = await Member.findByIdAndUpdate(
-      req.params.id,
-      updateQuery,
-      { new: true, runValidators: true }
-    );
+    const member = await Member.findByIdAndUpdate(req.params.id, updateQuery, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!member) {
       return res.status(404).json({ error: "Member not found" });
