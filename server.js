@@ -5,7 +5,7 @@ require("dotenv").config();
 const connectDB = require("./config/db");
 
 const memberRoutes = require("./routes/memberRoutes");
-const labelRoutes = require("./routes/labelRoutes");
+const labelsRoutes = require("./routes/labels");
 const dashboardRoutes=require("./routes/dashboardRoutes")
 const authRoutes=require("./routes/authRoutes")
 
@@ -17,7 +17,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api/members", memberRoutes);
-app.use("/api/labels", labelRoutes);
+app.use("/api/labels", labelsRoutes);
 app.use("/api", dashboardRoutes);
 app.use("/api/auth", authRoutes)
 
