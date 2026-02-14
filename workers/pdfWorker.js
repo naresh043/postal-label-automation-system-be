@@ -37,10 +37,6 @@ const ensureOutputDirectory = () => {
 const processPdfJob = async (job) => {
   const { memberIds } = job.data;
 
-  console.log(
-  "[DEBUG] Total memberIds received:",
-  memberIds.length
-);
   if (!Array.isArray(memberIds) || memberIds.length === 0) {
     throw new Error("Job payload is missing memberIds.");
   }
@@ -58,25 +54,11 @@ const processPdfJob = async (job) => {
 
     for (let i = 0; i < total; i += CHUNK_SIZE) {
       const batchIds = memberIds.slice(i, i + CHUNK_SIZE);
-console.log(
-  `[DEBUG] Chunk ${i / CHUNK_SIZE + 1}: batchIds length =`,
-  batchIds.length
-);
+ 
       const members = await Member.find({
         _id: { $in: batchIds },
       }).lean();
-      console.log(
-  `[DEBUG] Chunk ${i / CHUNK_SIZE + 1}: members fetched =`,
-  members.length
-);
 
-if (members.length !== batchIds.length) {
-  console.warn(
-    "⚠️ MISMATCH:",
-    "batchIds =", batchIds.length,
-    "members =", members.length
-  );
-}
 
       if (!members.length) continue;
 
@@ -102,10 +84,6 @@ if (members.length !== batchIds.length) {
         chunkPdf.getPageIndices()
       );
       pages.forEach((p) => finalPdf.addPage(p));
-      console.log(
-  "[DEBUG] Total pages so far:",
-  finalPdf.getPageCount()
-);
 
       processed += members.length;
       await job.updateProgress(
