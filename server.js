@@ -24,6 +24,17 @@ app.use("/api/auth", authRoutes);
 // DB
 connectDB();
 
+/**
+ * 🚀 START PDF WORKER ONLY WHEN ENABLED
+ * (Required for Render Free plan)
+ */
+if (process.env.ENABLE_PDF_WORKER === "true") {
+  console.log("🟢 Starting PDF Worker inside API process...");
+  require("./workers/pdfWorker");
+}
+
 // Server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () =>
+  console.log(`🚀 Server running on port ${PORT}`)
+);
