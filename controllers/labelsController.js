@@ -1,27 +1,36 @@
 const fs = require("fs");
 const path = require("path");
-const { getPdfQueue } = require("../queue/pdfQueue");
+const PdfJob = require("../models/PdfJob");
 
-// POST /api/labels/jobs
-// Enqueue PDF generation and immediately return job details.
+/**
+ * POST /api/labels/jobs
+ * Create a PDF generation job (async, no timeout)
+ */
 exports.enqueueLabelsPDFJob = async (req, res) => {
   try {
     const { memberIds } = req.body;
 
     if (!Array.isArray(memberIds) || memberIds.length === 0) {
-      return res.status(400).json({ message: "memberIds must be a non-empty array." });
+      return res.status(400).json({
+        message: "memberIds must be a non-empty array.",
+      });
     }
 
-    const queue = getPdfQueue();
-
-    // Job payload includes only IDs; worker fetches full member data from MongoDB.
-    const job = await queue.add("generate-label-pdf", { memberIds });
+    const job = await PdfJob.create({
+      queueName: "pdf-generation",
+      name: "generate-label-pdf",
+      data: { memberIds },
+      status: "waiting",
+      progress: 0,
+      attemptsMade: 0,
+      maxAttempts: 3,
+    });
 
     return res.status(202).json({
       message: "PDF generation job queued.",
-      jobId: job.id,
-      statusUrl: `/api/labels/jobs/${job.id}`,
-      downloadUrl: `/api/labels/jobs/${job.id}/download`,
+      jobId: job._id,
+      statusUrl: `/api/labels/jobs/${job._id}`,
+      downloadUrl: `/api/labels/jobs/${job._id}/download`,
     });
   } catch (error) {
     console.error("Failed to enqueue PDF job:", error);
@@ -32,37 +41,42 @@ exports.enqueueLabelsPDFJob = async (req, res) => {
   }
 };
 
-// GET /api/labels/jobs/:jobId
-// Return queue state so clients can poll for completion.
+/**
+ * GET /api/labels/jobs/:jobId
+ * Get job status (for polling)
+ */
 exports.getLabelsPDFJobStatus = async (req, res) => {
   try {
     const { jobId } = req.params;
-    const queue = getPdfQueue();
-    const job = await queue.getJob(jobId);
+
+    const job = await PdfJob.findById(jobId);
 
     if (!job) {
-      return res.status(404).json({ message: "Job not found." });
+      return res.status(404).json({
+        message: "Job not found.",
+      });
     }
 
-    const state = await job.getState();
     const response = {
-      jobId: job.id,
+      jobId: job._id,
       name: job.name,
-      status: state,
-      progress: job.progress || 0,
-      createdAt: job.timestamp ? new Date(job.timestamp).toISOString() : null,
-      finishedAt: job.finishedOn ? new Date(job.finishedOn).toISOString() : null,
-      failedReason: job.failedReason || null,
+      status: job.status,          // waiting | active | completed | failed
+      progress: job.progress,      // 0–100
+      attemptsMade: job.attemptsMade,
+      maxAttempts: job.maxAttempts,
+      createdAt: job.createdAt,
+      startedAt: job.startedAt,
+      finishedAt: job.finishedAt,
+      failedReason: job.failedReason,
     };
 
-    // Worker stores the generated file metadata as job return value on success.
-    if (state === "completed" && job.returnvalue) {
+    if (job.status === "completed" && job.returnvalue) {
       response.result = {
         fileName: job.returnvalue.fileName,
-        fileSize: job.returnvalue.fileSize,
-        generatedAt: job.returnvalue.generatedAt,
+        fileSize: job.returnvalue.fileSize || null,
+        generatedAt: job.finishedAt,
       };
-      response.downloadUrl = `/api/labels/jobs/${job.id}/download`;
+      response.downloadUrl = `/api/labels/jobs/${job._id}/download`;
     }
 
     return res.status(200).json(response);
@@ -75,28 +89,32 @@ exports.getLabelsPDFJobStatus = async (req, res) => {
   }
 };
 
-// GET /api/labels/jobs/:jobId/download
-// Download the generated PDF only when the BullMQ job is completed.
+/**
+ * GET /api/labels/jobs/:jobId/download
+ * Download the generated PDF
+ */
 exports.downloadLabelsPDF = async (req, res) => {
   try {
     const { jobId } = req.params;
-    const queue = getPdfQueue();
-    const job = await queue.getJob(jobId);
+
+    const job = await PdfJob.findById(jobId);
 
     if (!job) {
-      return res.status(404).json({ message: "Job not found." });
-    }
-
-    const state = await job.getState();
-    if (state !== "completed") {
-      return res.status(409).json({
-        message: "PDF is not ready yet.",
-        status: state,
+      return res.status(404).json({
+        message: "Job not found.",
       });
     }
 
-    const filePath = job.returnvalue && job.returnvalue.filePath;
-    const fileName = (job.returnvalue && job.returnvalue.fileName) || `labels-${job.id}.pdf`;
+    if (job.status !== "completed") {
+      return res.status(409).json({
+        message: "PDF is not ready yet.",
+        status: job.status,
+      });
+    }
+
+    const filePath = job.returnvalue?.filePath;
+    const fileName =
+      job.returnvalue?.fileName || `labels-${job._id}.pdf`;
 
     if (!filePath || !fs.existsSync(filePath)) {
       return res.status(410).json({

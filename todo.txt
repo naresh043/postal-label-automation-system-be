@@ -1,4 +1,0 @@
-POST   /members
-GET    /members
-PUT    /members/:id
-DELETE /members/:id

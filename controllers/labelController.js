@@ -21,45 +21,45 @@ exports.generateLabelsPDF = async (req, res) => {
     }
 
     // 2️⃣ Generate HTML
-    const html = generateLabelHTML(members);
+    // const html = generateLabelHTML(members);
 
     // 3️⃣ Launch Puppeteer (RENDER SAFE)
-    const browser = await puppeteer.launch({
-      executablePath: chromium.path,
-      headless: chromium.headless,
-      args: chromium.args,
-    });
+    // const browser = await puppeteer.launch({
+    //   executablePath: chromium.path,
+    //   headless: chromium.headless,
+    //   args: chromium.args,
+    // });
 
-    const page = await browser.newPage();
+    // const page = await browser.newPage();
 
     // 4️⃣ Set HTML content
-    await page.setContent(html, {
-      waitUntil: "domcontentloaded",
-    });
+    // await page.setContent(html, {
+    //   waitUntil: "domcontentloaded",
+    // });
 
     // 5️⃣ Generate PDF
-    const pdf = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      preferCSSPageSize: true,
-      margin: {
-        top: "10mm",
-        bottom: "10mm",
-        left: "10mm",
-        right: "10mm",
-      },
-    });
+    // const pdf = await page.pdf({
+    //   format: "A4",
+    //   printBackground: true,
+    //   preferCSSPageSize: true,
+    //   margin: {
+    //     top: "10mm",
+    //     bottom: "10mm",
+    //     left: "10mm",
+    //     right: "10mm",
+    //   },
+    // });
 
-    await browser.close();
+    // await browser.close();
 
     // 6️⃣ Send PDF for PRINT (not download)
-    res.set({
-      "Content-Type": "application/pdf",
-      "Content-Disposition": "inline; filename=labels.pdf",
-      "Content-Length": pdf.length,
-    });
+    // res.set({
+    //   "Content-Type": "application/pdf",
+    //   "Content-Disposition": "inline; filename=labels.pdf",
+    //   "Content-Length": pdf.length,
+    // });
 
-    res.send(pdf);
+    res.send(members);
 
   } catch (error) {
     console.error("PDF generation error:", error);
