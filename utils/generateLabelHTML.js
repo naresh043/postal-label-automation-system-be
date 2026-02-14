@@ -4,7 +4,7 @@ const generateLabelHTML = (members) => {
 
   for (let i = 0; i < members.length; i += LABELS_PER_PAGE) {
     const pageMembers = members.slice(i, i + LABELS_PER_PAGE);
-
+console.log(pageMembers[0].labelCode)
     pagesHtml += `
       <div class="page">
         ${pageMembers
@@ -53,6 +53,7 @@ const generateLabelHTML = (members) => {
 }
 
 .label {
+  position: relative; 
   width: 10cm;
   height: 4.4cm;
   border: 0.4mm solid #000;
