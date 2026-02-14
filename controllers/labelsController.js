@@ -114,7 +114,7 @@ exports.downloadLabelsPDF = async (req, res) => {
 
     const filePath = job.returnvalue?.filePath;
     const fileName =
-      job.returnvalue?.fileName || `labels-${job._id}.pdf`;
+      job.returnvalue?.fileName || `labels.pdf`;
 
     if (!filePath || !fs.existsSync(filePath)) {
       return res.status(410).json({
