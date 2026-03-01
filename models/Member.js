@@ -1,29 +1,9 @@
 const mongoose = require("mongoose");
-
-/* =========================
-   REMARK SUB-SCHEMA
-========================= */
-const remarkSchema = new mongoose.Schema({
-  remark: {
-    text: {
-      type: String,
-      trim: true,
-    },
-    createdAt: {
-      type: Date,
-    },
-  },
-});
-
-/* =========================
-   MEMBER SCHEMA
-========================= */
 const memberSchema = new mongoose.Schema(
   {
     labelCode: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
     },
 
@@ -71,16 +51,13 @@ const memberSchema = new mongoose.Schema(
       default: null,
       trim: true,
     },
-
-    /* ✅ Append-only remarks */
     remark: {
-      text: {
-        type: String,
-        trim: true,
-      },
-      createdAt: {
-        type: Date,
-      },
+      type: String,
+      trim: true,
+    },
+    isAllowedToPrint: {
+      type: Boolean,
+      default: true,
     },
   },
   {
@@ -88,10 +65,6 @@ const memberSchema = new mongoose.Schema(
     versionKey: false,
   },
 );
-
-/* =========================
-   INDEXES
-========================= */
 memberSchema.index({ labelCode: 1 }, { unique: true });
 
 module.exports = mongoose.model("Member", memberSchema);

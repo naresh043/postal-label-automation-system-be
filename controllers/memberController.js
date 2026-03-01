@@ -1,9 +1,6 @@
 const Member = require("../models/Member");
 const CounterModel = require("../models/CounterModel");
 
-/* =========================
-   CREATE MEMBER (LM / NAD)
-========================= */
 exports.createMember = async (req, res) => {
   try {
     const { prefix, ...memberData } = req.body;
@@ -41,9 +38,6 @@ exports.createMember = async (req, res) => {
   }
 };
 
-/* =========================
-   GET ALL MEMBERS
-========================= */
 exports.getMembers = async (req, res) => {
   try {
     const members = await Member.find().sort({ createdAt: -1 });
@@ -55,6 +49,19 @@ exports.getMembers = async (req, res) => {
   }
 };
 
+exports.getPrintMembers = async (req, res) => {
+  try {
+    const members = await Member.find({ isAllowedToPrint: true })
+      .sort({ createdAt: -1 })
+      .lean(); // ✅ faster, lighter objects
+
+    return res.status(200).json(members);
+  } catch (err) {
+    return res.status(500).json({
+      error: "Failed to fetch members",
+    });
+  }
+};
 /* =========================
    UPDATE MEMBER
    - labelCode protected
@@ -115,10 +122,6 @@ exports.deleteMember = async (req, res) => {
   }
 };
 
-/* =========================
-   GET NEXT MEMBER CODE
-   (Preview only)
-========================= */
 exports.getNextMemberCode = async (req, res) => {
   try {
     const { prefix } = req.query;
@@ -139,5 +142,38 @@ exports.getNextMemberCode = async (req, res) => {
     return res.status(500).json({
       error: "Failed to generate next member code",
     });
+  }
+};
+
+exports.toggleAllowToPrint = async (req, res) => {
+  try {
+    // 1️⃣ Get current value
+    const member = await Member.findById(req.params.id).select(
+      "isAllowedToPrint"
+    );
+
+    if (!member) {
+      return res.status(404).json({ error: "Member not found" });
+    }
+
+    // 2️⃣ Toggle value
+    const updatedMember = await Member.findByIdAndUpdate(
+      req.params.id,
+      {
+        isAllowedToPrint: !member.isAllowedToPrint,
+      },
+      {
+        new: true,
+        runValidators: false, // avoids remark validation issue
+      }
+    );
+
+    return res.status(200).json({
+      message: "Print permission updated",
+      isAllowedToPrint: updatedMember.isAllowedToPrint,
+    });
+  } catch (err) {
+    console.error("TOGGLE PRINT ERROR:", err);
+    return res.status(500).json({ error: err.message });
   }
 };
