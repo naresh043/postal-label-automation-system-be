@@ -5,7 +5,7 @@ exports.createMember = async (req, res) => {
   try {
     const { prefix, ...memberData } = req.body;
 
-    if (!["LM", "NAD"].includes(prefix)) {
+    if (!["LM", "NAD","BFD"].includes(prefix)) {
       return res.status(400).json({ error: "Invalid prefix" });
     }
 
@@ -77,10 +77,7 @@ exports.updateMember = async (req, res) => {
 
     // ✅ Only ONE remark (overwrite old one)
     if (remark && remark.trim()) {
-      updateQuery.$set.remark = {
-        text: remark.trim(),
-        createdAt: new Date(), // stores date + time
-      };
+      updateQuery.$set.remark = remark.trim();
     }
 
     const member = await Member.findByIdAndUpdate(req.params.id, updateQuery, {
@@ -125,8 +122,9 @@ exports.deleteMember = async (req, res) => {
 exports.getNextMemberCode = async (req, res) => {
   try {
     const { prefix } = req.query;
+    console.log(prefix)
 
-    if (!["LM", "NAD"].includes(prefix)) {
+    if (!["LM", "NAD", "BFD"].includes(prefix)) {
       return res.status(400).json({ error: "Invalid prefix" });
     }
 
@@ -149,7 +147,7 @@ exports.toggleAllowToPrint = async (req, res) => {
   try {
     // 1️⃣ Get current value
     const member = await Member.findById(req.params.id).select(
-      "isAllowedToPrint"
+      "isAllowedToPrint",
     );
 
     if (!member) {
@@ -165,7 +163,7 @@ exports.toggleAllowToPrint = async (req, res) => {
       {
         new: true,
         runValidators: false, // avoids remark validation issue
-      }
+      },
     );
 
     return res.status(200).json({

@@ -6,30 +6,48 @@ exports.getDashboardStats = async (req, res) => {
       {
         $group: {
           _id: {
-            $cond: [
-              { $regexMatch: { input: "$labelCode", regex: /^NAD-/ } },
-              "NAD",
-              "LM"
-            ]
+            $switch: {
+              branches: [
+                {
+                  case: {
+                    $regexMatch: { input: "$labelCode", regex: /^NAD-/ },
+                  },
+                  then: "NAD",
+                },
+                {
+                  case: {
+                    $regexMatch: { input: "$labelCode", regex: /^BFD-/ },
+                  },
+                  then: "BFD",
+                },
+                {
+                  case: { $regexMatch: { input: "$labelCode", regex: /^LM-/ } },
+                  then: "LM",
+                },
+              ],
+              default: "OTHER",
+            },
           },
-          count: { $sum: 1 }
-        }
-      }
+          count: { $sum: 1 },
+        },
+      },
     ]);
 
-    // Default counts
     let nadCount = 0;
     let lmCount = 0;
+    let bfdCount = 0;
 
     stats.forEach((item) => {
       if (item._id === "NAD") nadCount = item.count;
       if (item._id === "LM") lmCount = item.count;
+      if (item._id === "BFD") bfdCount = item.count;
     });
 
     res.json({
-      totalMembers: nadCount + lmCount,
+      totalMembers: nadCount + lmCount + bfdCount,
       nadMembers: nadCount,
       lmMembers: lmCount,
+      bfdMembers: bfdCount,
     });
   } catch (err) {
     console.error("DASHBOARD STATS ERROR:", err);
