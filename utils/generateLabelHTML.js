@@ -111,6 +111,10 @@ ${pagesHtml}
 };
 
 function labelCell(m = {}) {
+  if (!m.name && !m.addressLine1 && !m.city) {
+    return `<td class="label-cell"></td>`;
+  }
+
   return `
     <td class="label-cell">
       <div class="label">
@@ -118,7 +122,7 @@ function labelCell(m = {}) {
         <div class="line name">SRI ${m.name || ""}</div>
         <div class="line">${m.addressLine1 || ""}</div>
         <div class="line">${m.addressLine2 || ""}</div>
-        <div class="line">${m.city || ""} - ${m.pincode || ""}</div>
+        <div class="line">${m.city || ""}${m.pincode ? " - " + m.pincode : ""}</div>
       </div>
     </td>
   `;

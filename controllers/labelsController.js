@@ -60,8 +60,8 @@ exports.getLabelsPDFJobStatus = async (req, res) => {
     const response = {
       jobId: job._id,
       name: job.name,
-      status: job.status,          // waiting | active | completed | failed
-      progress: job.progress,      // 0–100
+      status: job.status, // waiting | active | completed | failed
+      progress: job.progress, // 0–100
       attemptsMade: job.attemptsMade,
       maxAttempts: job.maxAttempts,
       createdAt: job.createdAt,
@@ -111,18 +111,23 @@ exports.downloadLabelsPDF = async (req, res) => {
         status: job.status,
       });
     }
-
     const filePath = job.returnvalue?.filePath;
-    const fileName =
-      job.returnvalue?.fileName || `labels.pdf`;
+    const fileName = job.returnvalue?.fileName || "labels.pdf";
 
-    if (!filePath || !fs.existsSync(filePath)) {
+    const normalizedPath = path.resolve(filePath);
+
+    console.log("Checking:", normalizedPath);
+    console.log("Exists:", fs.existsSync(normalizedPath));
+
+    if (!filePath || !fs.existsSync(normalizedPath)) {
       return res.status(410).json({
         message: "Generated PDF not found on disk.",
       });
     }
 
-    return res.download(path.resolve(filePath), fileName);
+    return res.download(normalizedPath, fileName);
+
+    // return res.download(path.resolve(filePath), fileName);
   } catch (error) {
     console.error("Failed to download generated PDF:", error);
     return res.status(500).json({
